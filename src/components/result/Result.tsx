@@ -25,96 +25,96 @@ import { Button } from "../ui/button";
 // };
 
 function Result() {
-  const router = useRouter();
-  const { handleShareToKakao } = useKakao();
+	const router = useRouter();
+	const { handleShareToKakao } = useKakao();
 
-  const { iffy } = useIffyStore();
+	const { iffy } = useIffyStore();
 
-  if (!iffy?.gift_image_url) router.push("/");
+	if (!iffy?.gift_image_url) router.push("/");
 
-  useEffect(() => {
-    console.log(iffy);
-  }, [iffy]);
+	useEffect(() => {
+		console.log(iffy);
+	}, [iffy]);
 
-  return (
-    <div className="h-auto">
-      <div className="flex flex-col gap-5">
-        <div className="space-y-2">
-          <SparkleStars />
-          <h2 className="text-2xl font-bold text-purple-800 tracking-tight flex items-center gap-2">
-            {iffy?.humor}
-          </h2>
-        </div>
+	return (
+		<div className="h-auto">
+			<div className="flex flex-col gap-5">
+				<div className="space-y-2">
+					<SparkleStars />
+					<h2 className="text-2xl font-bold text-purple-800 tracking-tight flex items-center gap-2">
+						{iffy?.humor}
+					</h2>
+				</div>
 
-        <div className="flex flex-col items-center justify-center gap-3">
-          <img
-            src={iffy?.gift_image_url}
-            alt="선물 이미지"
-            className="w-full h-auto rounded-md max-w-[500px]"
-          />
-          {iffy?.is_person && (
-            <p className="text-lg font-semibold text-blue-500 bg-white/50 w-full text-center rounded-md py-2">
-              {iffy?.age}세로 추정돼요!
-            </p>
-          )}
-          <div className="bg-white/50 w-full rounded-md p-5 px-4 space-y-3">
-            <div className="text-xl md:text-2xl font-bold text-purple-800 tracking-tight w-full flex items-center">
-              {iffy?.is_error ? (
-                <div>{iffy?.gift_name}</div>
-              ) : (
-                <div>
-                  <span>
-                    {iffy?.brand} {iffy?.gift_name}
-                  </span>
-                  을 선물해 드릴게요.
-                </div>
-              )}
-            </div>
-            <p className="text-base font-semibold text-purple-950">
-              {iffy?.commentary}
-            </p>
-          </div>
-        </div>
+				<div className="flex flex-col items-center justify-center gap-3">
+					<img
+						src={iffy?.gift_image_url}
+						alt="선물 이미지"
+						className="w-full h-auto rounded-md max-w-[500px]"
+					/>
+					{iffy?.is_person && (
+						<p className="text-lg font-semibold text-blue-500 bg-white/50 w-full text-center rounded-md py-2">
+							{iffy?.age}세로 추정돼요!
+						</p>
+					)}
+					<div className="bg-white/50 w-full rounded-md p-5 px-4 space-y-3">
+						<div className="text-xl md:text-2xl font-bold text-purple-800 tracking-tight w-full flex items-center">
+							{iffy?.is_error ? (
+								<div>{iffy?.gift_name}</div>
+							) : (
+								<div>
+									<span>
+										{iffy?.brand} {iffy?.gift_name}
+									</span>
+									을 선물해 드릴게요.
+								</div>
+							)}
+						</div>
+						<p className="text-base font-semibold text-purple-950">
+							{iffy?.commentary}
+						</p>
+					</div>
+				</div>
 
-        <div className="flex flex-col items-center justify-center gap-3">
-          {!iffy?.is_error && (
-            <Button
-              className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white h-12 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-lg  cursor-pointer w-full duration-1000"
-              onClick={() => handleShareToKakao({ iffyData: iffy as Iffy })}
-            >
-              사달라고 조르기
-              <RiKakaoTalkFill height={24} width={24} className="size-6" />
-            </Button>
-          )}
+				<div className="flex flex-col items-center justify-center gap-3">
+					{!iffy?.is_error && (
+						<Button
+							className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white h-12 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-lg  cursor-pointer w-full duration-1000"
+							onClick={() => handleShareToKakao({ iffyData: iffy as Iffy })}
+						>
+							사달라고 조르기
+							<RiKakaoTalkFill height={24} width={24} className="size-6" />
+						</Button>
+					)}
 
-          <div className="flex gap-2 w-full text-center">
-            {iffy?.link && (
-              <Link
-                target="_blank"
-                className="bg-purple-500 hover:bg-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-sm flex items-center justify-center flex-1"
-                href={iffy.link}
-              >
-                직접 사러가기
-              </Link>
-            )}
-            <Button
-              className="bg-purple-500 hover:bg-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 gap-2 text-sm cursor-pointer flex-1"
-              onClick={() => router.push("/")}
-            >
-              다시하기
-            </Button>
-          </div>
-          <Link
-            href="https://thesmc.co.kr"
-            target="_blank"
-            className="text-xs underline text-gray-500 cursor-pointer"
-          >
-            우리가 궁금하다면?
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+					<div className="flex gap-2 w-full text-center">
+						{iffy?.link && (
+							<Link
+								target="_blank"
+								className="bg-purple-500 hover:bg-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-sm flex items-center justify-center flex-1"
+								href={iffy.link}
+							>
+								직접 사러가기
+							</Link>
+						)}
+						<Button
+							className="bg-purple-500 hover:bg-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 gap-2 text-sm cursor-pointer flex-1"
+							onClick={() => router.push("/")}
+						>
+							다시하기
+						</Button>
+					</div>
+					<Link
+						href="https://thesmc.co.kr"
+						target="_blank"
+						className="text-xs underline text-gray-500 cursor-pointer"
+					>
+						우리가 궁금하다면?
+					</Link>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 export default Result;

@@ -4,12 +4,12 @@ import type { Iffy } from "@/types/iffy.types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useIffyMutation = () => {
-  const queryClient = useQueryClient();
-  return useMutation<Iffy, Error, { formData: FormData }>({
-    mutationFn: ({ formData }: { formData: FormData }) =>
-      postIffy({ formData }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY_IFFY] });
-    },
-  });
+	const queryClient = useQueryClient();
+	return useMutation<Iffy, Error, { formData: FormData }>({
+		mutationFn: ({ formData }: { formData: FormData }) =>
+			postIffy({ formData }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [QUERY_KEY_IFFY] });
+		},
+	});
 };
