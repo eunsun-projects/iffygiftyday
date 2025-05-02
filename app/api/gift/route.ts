@@ -65,7 +65,11 @@ const GiftRecommendationSchema = z.object({
   유머: z.string(),
 });
 
-// --- Google Sheets 설정 ---
+// --- Google Sheets 설정 및 캐싱 ---
+let giftDataCache: GiftData[] | null = null;
+let lastCacheTime: Date | null = null;
+const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour cache
+
 const setupGoogleSheet = async (): Promise<GoogleSpreadsheet | null> => {
   if (!serviceAccountEmail || !privateKey || !giftSheetId) {
     console.error("Google Sheets credentials not configured properly.");
@@ -81,9 +85,73 @@ const setupGoogleSheet = async (): Promise<GoogleSpreadsheet | null> => {
     await doc.loadInfo(); // loads document properties and worksheets
     return doc;
   } catch (error) {
-    console.error("Error loading Google Sheet:", error);
+    console.error("Error loading Google Sheet info:", error);
     return null;
   }
+};
+
+const loadGiftDataIntoCache = async (): Promise<GiftData[] | null> => {
+  console.log("Attempting to load gift data from Google Sheet into cache...");
+  const doc = await setupGoogleSheet();
+  if (!doc) {
+    console.error("Failed to setup Google Sheet for cache loading.");
+    // 캐시 로드 실패 시 기존 캐시 유지 또는 null 반환 결정 필요
+    // 여기서는 null을 반환하여 호출 측에서 처리하도록 함
+    return null;
+  }
+  try {
+    const sheet = doc.sheetsByIndex[0];
+    const rows = await sheet.getRows<GiftData>();
+    const data = rows.map((row) => row.toObject() as GiftData);
+    giftDataCache = data; // 캐시 업데이트
+    lastCacheTime = new Date(); // 마지막 캐시 시간 업데이트
+    console.log(`Successfully loaded ${data.length} gift items into cache.`);
+    return giftDataCache;
+  } catch (error) {
+    console.error("Error loading gift data rows into cache:", error);
+    // 오류 발생 시 기존 캐시를 무효화
+    giftDataCache = null;
+    lastCacheTime = null;
+    return null; // 오류 발생 알림
+  }
+};
+
+const getGiftData = async (): Promise<GiftData[]> => {
+  const now = new Date();
+  const isCacheValid =
+    giftDataCache &&
+    lastCacheTime &&
+    now.getTime() - lastCacheTime.getTime() < CACHE_DURATION_MS;
+
+  if (isCacheValid && giftDataCache) {
+    console.log("Using cached gift data.");
+    return giftDataCache;
+  }
+
+  console.log(
+    isCacheValid
+      ? "Cache is valid but data is null, reloading..."
+      : "Cache invalid or expired, reloading..."
+  );
+  const loadedData = await loadGiftDataIntoCache();
+  if (loadedData) {
+    return loadedData;
+  }
+
+  // 캐시 로드 실패 시의 처리
+  console.error(
+    "Failed to load gift data into cache. Checking for stale cache..."
+  );
+  // 필요하다면 이전에 유효했던 캐시를 반환하는 로직 추가 가능
+  if (giftDataCache) {
+    console.warn("Returning stale cache data due to loading failure.");
+    return giftDataCache;
+  }
+
+  // 이전 캐시조차 없으면 에러 throw
+  throw new Error(
+    "Failed to retrieve gift data from Google Sheets and no cache is available."
+  );
 };
 
 // --- API 라우트 핸들러 ---
@@ -103,6 +171,17 @@ export async function POST(request: NextRequest) {
   let humor = "사진이 너무 귀여워서 AI가 심쿵했어요… 추천은 잠시 쉬어갈게요!";
 
   try {
+    // --- 캐시된 선물 데이터 가져오기 ---
+    const giftData = await getGiftData();
+    if (!giftData || giftData.length === 0) {
+      // getGiftData 내부에서 오류 throw 하므로 이 조건은 사실상 도달하기 어려움
+      console.error("No gift data available from cache or Google Sheets.");
+      throw new Error("선물 데이터를 가져올 수 없습니다.");
+    }
+    console.log(
+      `Using ${giftData.length} gift items from data source (cache/sheet).`
+    );
+
     const formData = await request.formData();
     const imageFile = formData.get("image") as File | null;
 
@@ -141,19 +220,6 @@ export async function POST(request: NextRequest) {
     isPerson = analysisResult.object.is_person;
     desc = analysisResult.object.desc;
     age = analysisResult.object.age;
-
-    // 3. Google Sheets에서 선물 목록 로드
-    console.log("Google Sheet 로드 시작...");
-    const doc = await setupGoogleSheet();
-    if (!doc) {
-      throw new Error("Failed to load Google Sheet");
-    }
-    const sheet = doc.sheetsByIndex[0]; // 첫 번째 시트 사용
-    const rows = await sheet.getRows<GiftData>();
-    const giftData: GiftData[] = rows.map((row) => row.toObject() as GiftData);
-    console.log(
-      `Google Sheet에서 ${giftData.length}개의 선물 데이터 로드 완료`
-    );
 
     // 사람이 아닌 경우, 바로 'CJ나눔재단 기부' 추천
     if (!isPerson) {
@@ -313,8 +379,8 @@ export async function POST(request: NextRequest) {
     if (isPerson) {
       stylePrompt = `make this person look like a cute cartoon character who is ${age} years old, with a soft and playful illustration style`;
     } else {
-      stylePrompt =
-        "make this object look like a cute cartoon character, with a soft and playful illustration style";
+      // 사람이 아닌 경우 (기부 추천되었을 수 있음), 스타일 프롬프트는 대상 묘사 기반
+      stylePrompt = `make the subject described as '${desc}' look like a cute cartoon character, with a soft and playful illustration style`;
     }
 
     // Convert Buffer to a File-like object for OpenAI API
@@ -326,11 +392,11 @@ export async function POST(request: NextRequest) {
     );
 
     const stylizedResult = await openai.images.edit({
-      model: "gpt-image-1",
+      model: "gpt-image-1", // 모델 이름 확인 필요, vision 모델과 다름
       image: imageFileForApi,
       prompt: stylePrompt,
       size: "1024x1024", // Or other supported size
-      quality: "auto",
+      quality: "auto", // dall-e-2 에서는 quality 파라미터 없을 수 있음
     });
 
     const imageBase64 = stylizedResult.data?.[0]?.b64_json;
@@ -387,6 +453,10 @@ export async function POST(request: NextRequest) {
       reason = "문제의 소지가 있는 이미지에요! 다시 시도해주세요";
     } else {
       isError = true;
+      // 캐싱 실패 에러 메시지 등을 포함하여 좀 더 구체적인 에러 응답 고려
+      reason = `오류가 발생했습니다: ${
+        (error as Error).message || "알 수 없는 오류"
+      }`;
     }
     // 오류 발생 시 기본값 사용 (이미 위에서 설정됨)
   }
