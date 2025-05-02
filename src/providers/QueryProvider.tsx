@@ -1,53 +1,53 @@
 "use client";
 
 import {
-  QueryClient,
-  QueryClientProvider,
-  isServer,
+	QueryClient,
+	QueryClientProvider,
+	isServer,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 function makeQueryClient(): QueryClient {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        // SSR을 사용하면 일반적으로 기본 staleTime을
-        // 0 이상으로 설정하여 클라이언트에서 즉시 리프레시되지 않도록 합니다.
-        refetchOnWindowFocus: false,
-        retry: false,
-        staleTime: 60 * 1000,
-      },
-    },
-  });
+	return new QueryClient({
+		defaultOptions: {
+			queries: {
+				// SSR을 사용하면 일반적으로 기본 staleTime을
+				// 0 이상으로 설정하여 클라이언트에서 즉시 리프레시되지 않도록 합니다.
+				refetchOnWindowFocus: false,
+				retry: false,
+				staleTime: 60 * 1000,
+			},
+		},
+	});
 }
 
 // undefined 로 초기값 설정
 let browserQueryClient: QueryClient | undefined;
 
 function getQueryClient(): QueryClient {
-  if (isServer) {
-    // 서버: 항상 새 쿼리 클라이언트 만들기
-    return makeQueryClient();
-  }
-  if (!browserQueryClient) browserQueryClient = makeQueryClient();
-  return browserQueryClient;
+	if (isServer) {
+		// 서버: 항상 새 쿼리 클라이언트 만들기
+		return makeQueryClient();
+	}
+	if (!browserQueryClient) browserQueryClient = makeQueryClient();
+	return browserQueryClient;
 }
 
 function QueryProvider({
-  children,
+	children,
 }: {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }): React.ReactElement {
-  const queryClient = getQueryClient();
+	const queryClient = getQueryClient();
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-      <ReactQueryDevtools
-        initialIsOpen={process.env.NEXT_PUBLIC_RUN_MODE === "local"}
-      />
-    </QueryClientProvider>
-  );
+	return (
+		<QueryClientProvider client={queryClient}>
+			{children}
+			<ReactQueryDevtools
+				initialIsOpen={process.env.NEXT_PUBLIC_RUN_MODE === "local"}
+			/>
+		</QueryClientProvider>
+	);
 }
 
 export default QueryProvider;

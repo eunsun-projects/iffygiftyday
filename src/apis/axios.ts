@@ -1,9 +1,9 @@
 import axios, { type AxiosError, type AxiosResponse } from "axios";
 
 const api = axios.create({
-  // baseURL: import.meta.env.APP_URL,
-  //baseURL: "http://127.0.0.1:8000",
-  baseURL: "/",
+	// baseURL: import.meta.env.APP_URL,
+	//baseURL: "http://127.0.0.1:8000",
+	baseURL: "/",
 });
 
 // api.interceptors.request.use((config) => {
@@ -17,10 +17,10 @@ const api = axios.create({
 // });
 
 api.interceptors.response.use(
-  <T>(response: AxiosResponse<T>): T => response.data,
-  (error: AxiosError) => {
-    return Promise.reject(error);
-  }
+	<T>(response: AxiosResponse<T>): T => response.data,
+	(error: AxiosError) => {
+		return Promise.reject(error);
+	},
 );
 
 export default api;

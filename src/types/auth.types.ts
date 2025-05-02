@@ -1,3 +1,3 @@
 export type SignOutResponse = {
-  message: string;
+	message: string;
 };
