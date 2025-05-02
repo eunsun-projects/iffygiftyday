@@ -1,7 +1,7 @@
-import Result from "@/components/result/Result";
+import ResultTemplate from "@/components/templates/ResultTemplate";
 
 function ResultPage() {
-	return <Result />;
+  return <ResultTemplate />;
 }
 
 export default ResultPage;
