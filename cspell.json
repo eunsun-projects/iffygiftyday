@@ -1,0 +1,4 @@
+{
+  "ignorePaths": ["src/types/global.d.ts"],
+  "words": ["Kakao"]
+}
