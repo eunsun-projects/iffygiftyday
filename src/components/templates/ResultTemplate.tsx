@@ -6,17 +6,22 @@ import useIffyStore from "@/store/zustand";
 import type { Iffy } from "@/types/iffy.types";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { RiKakaoTalkFill } from "react-icons/ri";
 import { toast } from "sonner";
 import SparkleStars from "../common/SparkleStars";
 import { Button } from "../ui/button";
+
+// 이미지 로딩 상태 타입
+type ImageStatus = "loading" | "loaded" | "error";
 
 function Result() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { handleShareToKakao } = useKakao();
   const { setRefetchCount } = useIffyStore();
+  const [imageStatus, setImageStatus] = useState<ImageStatus>("loading");
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const id = searchParams.get("id");
 
@@ -63,6 +68,56 @@ function Result() {
     }
   }, [isError, error, iffyFinal, router]);
 
+  useEffect(() => {
+    const imageUrl = iffyFinal?.gift_image_url;
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    if (imageUrl) {
+      setImageStatus("loading");
+      const preloader = new Image();
+
+      const timer = setTimeout(() => {
+        if (imageStatus === "loading") {
+          console.error(
+            `Image load timed out after 3 seconds for URL: ${imageUrl}`
+          );
+          setImageStatus("error");
+          refetch();
+        }
+      }, 3000);
+      timeoutRef.current = timer;
+
+      preloader.onload = () => {
+        console.log("Image preloaded successfully:", imageUrl);
+        clearTimeout(timer);
+        timeoutRef.current = null;
+        setImageStatus("loaded");
+      };
+
+      preloader.onerror = (err) => {
+        console.error("Image preload error:", err, imageUrl);
+        clearTimeout(timer);
+        timeoutRef.current = null;
+        setImageStatus("error");
+        refetch();
+      };
+
+      preloader.src = imageUrl;
+
+      return () => {
+        console.log("Cleaning up image preloader for:", imageUrl);
+        clearTimeout(timer);
+        preloader.onload = null;
+        preloader.onerror = null;
+      };
+    }
+    setImageStatus("error");
+  }, [iffyFinal?.gift_image_url, refetch, imageStatus]);
+
   if (isLoading || !id) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -92,9 +147,15 @@ function Result() {
         </div>
 
         <div className="flex flex-col items-center justify-center gap-3">
-          <div className="relative w-[80svw] h-[80svw] max-w-[500px] max-h-[500px] rounded-md">
-            {iffyFinal?.gift_image_url ? (
+          <div className="relative w-[80svw] h-[80svw] max-w-[500px] max-h-[500px] rounded-md bg-gray-200">
+            {imageStatus === "loading" && (
+              <div className="absolute inset-0 flex items-center justify-center text-gray-500 animate-pulse">
+                이미지 로딩 중...
+              </div>
+            )}
+            {imageStatus === "loaded" && iffyFinal?.gift_image_url && (
               <img
+                key={iffyFinal.gift_image_url}
                 src={iffyFinal.gift_image_url}
                 alt="선물 이미지"
                 style={{
@@ -104,13 +165,18 @@ function Result() {
                   objectFit: "cover",
                 }}
                 onError={(e) => {
-                  console.error("Image load error:", e);
-                  (e.target as HTMLImageElement).style.display = "none";
-                  refetch();
+                  console.error(
+                    "Final img tag error (should not happen often):",
+                    e
+                  );
+                  setImageStatus("error");
                 }}
               />
-            ) : (
-              <div className="absolute top-0 left-0 w-full h-full bg-gray-200 animate-pulse" />
+            )}
+            {imageStatus === "error" && (
+              <div className="absolute inset-0 flex items-center justify-center text-red-500">
+                이미지 표시 불가
+              </div>
             )}
           </div>
           {iffyFinal?.is_person && (
