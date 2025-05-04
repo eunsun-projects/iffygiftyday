@@ -21,7 +21,7 @@ export const useIffyQuery = ({ id }: { id: string }) => {
 
 export const usePollIffyStatusQuery = (id: string | null, count: number) => {
   const POLLING_INTERVAL_MS = 5000;
-  const MAX_POLL_ATTEMPTS = 20;
+  const MAX_POLL_ATTEMPTS = 25;
 
   return useQuery({
     queryKey: [QUERY_KEY_IFFY, id],
