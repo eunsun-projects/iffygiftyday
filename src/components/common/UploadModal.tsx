@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { MAX_POLL_ATTEMPTS } from "@/constants/iffy.const";
 import { useIffyMutation, usePollIffyStatusQuery } from "@/hooks/query.hooks";
 import useIffyStore from "@/store/zustand";
 import type { LoadingState } from "@/types/iffy.types";
@@ -16,8 +17,6 @@ import { Gift, Image, LoaderPinwheel, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-
-const MAX_POLL_ATTEMPTS = 15;
 
 interface UploadModalProps {
   loading: LoadingState;

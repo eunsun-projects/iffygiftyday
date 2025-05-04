@@ -1,5 +1,10 @@
 import { getAllGifts, getIffy, postIffy } from "@/apis/iffy.apis";
-import { QUERY_KEY_ALL_GIFTS, QUERY_KEY_IFFY } from "@/constants/iffy.const";
+import {
+  MAX_POLL_ATTEMPTS,
+  POLLING_INTERVAL_MS,
+  QUERY_KEY_ALL_GIFTS,
+  QUERY_KEY_IFFY,
+} from "@/constants/iffy.const";
 import type { AllGiftsResponse, Iffy } from "@/types/iffy.types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -20,9 +25,6 @@ export const useIffyQuery = ({ id }: { id: string }) => {
 };
 
 export const usePollIffyStatusQuery = (id: string | null, count: number) => {
-  const POLLING_INTERVAL_MS = 5000;
-  const MAX_POLL_ATTEMPTS = 25;
-
   return useQuery({
     queryKey: [QUERY_KEY_IFFY, id],
     queryFn: () => {
