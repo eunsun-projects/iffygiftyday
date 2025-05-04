@@ -7,11 +7,15 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": [".next", "node_modules"]
+		"ignore": [
+			".next",
+			"node_modules"
+		]
 	},
 	"formatter": {
 		"enabled": true,
-		"indentStyle": "tab"
+		"indentStyle": "tab",
+		"indentWidth": 2
 	},
 	"organizeImports": {
 		"enabled": true
