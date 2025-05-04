@@ -70,6 +70,7 @@ export default function UploadModal({ loading, setLoading }: UploadModalProps) {
       timerRef.current = setTimeout(() => {
         setId(startResponse.id);
         setAppStatus("processing");
+        if (timerRef.current) clearTimeout(timerRef.current);
       }, 15000);
     } catch (error) {
       console.error("업로드 실패:", error);
@@ -148,7 +149,7 @@ export default function UploadModal({ loading, setLoading }: UploadModalProps) {
       nextAppStatus = "failed";
       shouldStopPolling = true;
       errorOccurred = true;
-      errorMessage = tempIffy.commentary || "서버 처리 중 오류가 발생했습니다.";
+      errorMessage = "서버 처리 중 오류가 발생했습니다.";
     } else if (statusError) {
       console.error("Polling error:", statusError);
       nextAppStatus = "failed";
