@@ -113,6 +113,9 @@ export default function UploadModal({ loading, setLoading }: UploadModalProps) {
 
   useEffect(() => {
     if (!isOpen) {
+      setSelectedFile(null);
+      setPreviewSrc(null);
+
       if (appStatus === "processing" || appStatus === "submitting") {
         console.log("Modal closed during processing, resetting state.");
         if (timerRef.current) clearTimeout(timerRef.current);
@@ -122,50 +125,51 @@ export default function UploadModal({ loading, setLoading }: UploadModalProps) {
       }
       if (appStatus === "completed" || appStatus === "failed") {
         setRefetchCount(0);
+        setAppStatus("idle");
       }
     }
   }, [isOpen, appStatus, setLoading, setRefetchCount]);
 
   useEffect(() => {
-    if (!id || appStatus === "completed" || appStatus === "failed") {
-      return;
-    }
+    if (!id) return;
 
     let shouldStopPolling = false;
     let errorOccurred = false;
     let errorMessage = "";
+    let nextAppStatus = appStatus;
 
     if (tempIffy?.status === "completed") {
       console.log("Polling complete, result:", tempIffy);
-      setAppStatus("completed");
+      nextAppStatus = "completed";
       shouldStopPolling = true;
       router.push(`/result?id=${id}`);
     } else if (tempIffy?.status === "failed") {
       console.error("Processing failed:", tempIffy.commentary);
-      setAppStatus("failed");
+      nextAppStatus = "failed";
       shouldStopPolling = true;
       errorOccurred = true;
       errorMessage = tempIffy.commentary || "서버 처리 중 오류가 발생했습니다.";
     } else if (statusError) {
       console.error("Polling error:", statusError);
-      setAppStatus("failed");
+      nextAppStatus = "failed";
       shouldStopPolling = true;
       errorOccurred = true;
       errorMessage = "결과 확인 중 오류가 발생했습니다.";
     } else if (refetchCount >= MAX_POLL_ATTEMPTS) {
       console.warn(`Polling timed out after ${MAX_POLL_ATTEMPTS} attempts.`);
-      setAppStatus("failed");
+      nextAppStatus = "failed";
       shouldStopPolling = true;
       errorOccurred = true;
       errorMessage =
         "결과 처리 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.";
-      setRefetchCount(0);
-      setId(null);
-      router.refresh();
     }
 
     if (shouldStopPolling) {
+      setAppStatus(nextAppStatus);
       setRefetchCount(0);
+      setId(null);
+      setSelectedFile(null);
+      setPreviewSrc(null);
       setLoading({ open: false, isError: errorOccurred });
       setIsOpen(false);
       if (errorOccurred) {
@@ -184,9 +188,6 @@ export default function UploadModal({ loading, setLoading }: UploadModalProps) {
   ]);
 
   useEffect(() => {
-    setSelectedFile(null);
-    setPreviewSrc(null);
-
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
