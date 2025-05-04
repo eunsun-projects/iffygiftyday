@@ -4,7 +4,6 @@ import { useIffyQuery } from "@/hooks/query.hooks";
 import useKakao from "@/hooks/useKakao";
 import useIffyStore from "@/store/zustand";
 import type { Iffy } from "@/types/iffy.types";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
@@ -12,7 +11,6 @@ import { RiKakaoTalkFill } from "react-icons/ri";
 import { toast } from "sonner";
 import SparkleStars from "../common/SparkleStars";
 import { Button } from "../ui/button";
-import { Skeleton } from "../ui/skeleton";
 
 function Result() {
   const router = useRouter();
@@ -22,12 +20,19 @@ function Result() {
 
   const id = searchParams.get("id");
 
+  useEffect(() => {
+    if (!id) {
+      router.push("/");
+    }
+  }, [id, router]);
+
   const {
     data: iffyFinal,
     isLoading,
     isError,
     error,
-  } = useIffyQuery({ id: id || "" });
+    refetch,
+  } = useIffyQuery({ id: id as string });
 
   const handleReturnHome = () => {
     setRefetchCount(0);
@@ -88,15 +93,25 @@ function Result() {
 
         <div className="flex flex-col items-center justify-center gap-3">
           <div className="relative w-[80svw] h-[80svw] max-w-[500px] max-h-[500px] rounded-md">
-            <Skeleton className="absolute top-0 left-0 w-full h-full" />
-            <Image
-              src={iffyFinal?.gift_image_url}
-              alt="선물 이미지"
-              className="object-cover"
-              sizes="500px"
-              fill
-              unoptimized={true}
-            />
+            {iffyFinal?.gift_image_url ? (
+              <img
+                src={iffyFinal.gift_image_url}
+                alt="선물 이미지"
+                style={{
+                  position: "absolute",
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+                onError={(e) => {
+                  console.error("Image load error:", e);
+                  (e.target as HTMLImageElement).style.display = "none";
+                  refetch();
+                }}
+              />
+            ) : (
+              <div className="absolute top-0 left-0 w-full h-full bg-gray-200 animate-pulse" />
+            )}
           </div>
           {iffyFinal?.is_person && (
             <p className="text-lg font-semibold text-blue-500 bg-white/50 w-full text-center rounded-md py-2">
