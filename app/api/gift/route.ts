@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
           )
           .join("\n");
 
-        const unifiedPrompt = `다음은 어린이날 선물 후보 목록입니다:\n${giftOptions}\n\n이미지 분석 결과 대상은 '${desc}'(으)로 묘사됩니다.\n${
+        const unifiedPrompt = `다음은 어린이날 선물 후보 목록입니다:\n\n${giftOptions}\n\n이미지 분석 결과 대상은 '${desc}'(으)로 묘사됩니다.\n${
           isPerson ? `나이는 약 ${age}세입니다.` : "사람은 아니에요."
         }\n\n가장 잘 어울리는 선물을 하나를 골라주세요. 특히, 이미지 분석 결과인 '${desc}'(으)로 묘사되고 ${
           isPerson ? `약 ${age}세로 추정되는` : "사람이 아닌"
@@ -264,12 +264,17 @@ export async function POST(request: NextRequest) {
         reason = recommendationResult.object.추천이유;
         humor = recommendationResult.object.유머;
 
-        const bestMatch = candidates.find((g) => g["제품 명"] === giftName);
+        // 선물 목록(candidates)에서 GPT 응답(giftName)과 가장 일치하는 것을 찾습니다.
+        // 이때, 양쪽 문자열의 앞뒤 공백을 제거하고 비교합니다.
+        const trimmedGiftName = giftName.trim(); // GPT 응답 공백 제거
+        const bestMatch = candidates.find(
+          (g) => g["제품 명"] && g["제품 명"].trim() === trimmedGiftName // 후보 제품명 공백 제거 후 비교
+        );
 
         if (!bestMatch) {
           console.error(
-            `GPT가 선택한 '${giftName}'이(가) 후보 목록(${ageGroup})에 없습니다. 기부 옵션을 찾습니다. 후보:`,
-            candidates.map((c) => c["제품 명"])
+            `정리된 GPT 이름 '${trimmedGiftName}'이(가) 후보 목록(${ageGroup})에 없습니다. 기부 옵션을 찾습니다. 후보:`,
+            candidates.map((c) => c["제품 명"]) // 로그에는 원본 후보 목록 표시
           );
           // Fallback: GPT가 이상한 추천을 하면 기부 옵션 제안
           const donationGift = giftData.find(
