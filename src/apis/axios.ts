@@ -1,7 +1,7 @@
 import axios, { type AxiosError, type AxiosResponse } from "axios";
 
 const api = axios.create({
-  baseURL: "/",
+	baseURL: "/",
 });
 
 // api.interceptors.request.use((config) => {
@@ -15,21 +15,21 @@ const api = axios.create({
 // });
 
 api.interceptors.response.use(
-  <T>(response: AxiosResponse<T>): T => response.data,
-  (error: AxiosError) => {
-    return Promise.reject(error);
-  }
+	<T>(response: AxiosResponse<T>): T => response.data,
+	(error: AxiosError) => {
+		return Promise.reject(error);
+	},
 );
 
 const imgApi = axios.create({
-  baseURL: process.env.GEN_API_URL,
+	baseURL: process.env.GEN_API_URL,
 });
 
 imgApi.interceptors.response.use(
-  <T>(response: AxiosResponse<T>): T => response.data,
-  (error: AxiosError) => {
-    return Promise.reject(error);
-  }
+	<T>(response: AxiosResponse<T>): T => response.data,
+	(error: AxiosError) => {
+		return Promise.reject(error);
+	},
 );
 
 export { imgApi };

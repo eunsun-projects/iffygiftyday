@@ -5,15 +5,15 @@ export type Iffy = Tables<"iffy">;
 export type IffyResponse = Omit<Iffy, "created_at" | "id">;
 
 export interface LoadingState {
-  open: boolean;
-  isError: boolean;
+	open: boolean;
+	isError: boolean;
 }
 
 export type AllGiftsResponse = {
-  resultCount: number;
+	resultCount: number;
 };
 
 export type GenResponse = {
-  status: "success" | "error";
-  message: string;
+	status: "success" | "error";
+	message: string;
 };
