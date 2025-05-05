@@ -73,9 +73,16 @@ export default function UploadModal({ loading, setLoading }: UploadModalProps) {
       }, 15000);
     } catch (error) {
       console.error("업로드 실패:", error);
+      const exceeded = (error as Error).message.includes(
+        "AI 최대 사용량을 초과했어요."
+      );
       setAppStatus("failed");
       setLoading({ ...loading, open: false });
-      toast.error("업로드 중 오류가 발생했습니다.");
+      toast.error(
+        exceeded
+          ? "AI 최대 사용량을 초과했어요."
+          : "업로드 중 오류가 발생했습니다."
+      );
     }
   };
 
@@ -148,11 +155,7 @@ export default function UploadModal({ loading, setLoading }: UploadModalProps) {
       nextAppStatus = "failed";
       shouldStopPolling = true;
       errorOccurred = true;
-      const exceeded =
-        tempIffy.commentary.includes("AI 최대 사용량을 초과했어요.");
-      errorMessage = exceeded
-        ? "AI 최대 사용량을 초과했어요. 나중에 다시 시도해주세요."
-        : "서버 처리 중 오류가 발생했습니다.";
+      errorMessage = "서버 처리 중 오류가 발생했습니다.";
     } else if (statusError) {
       console.error("Polling error:", statusError);
       nextAppStatus = "failed";
