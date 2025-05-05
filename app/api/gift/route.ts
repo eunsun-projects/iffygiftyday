@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
           )
           .join("\n");
 
-        const unifiedPrompt = `다음은 어린이날 선물 후보 목록입니다:\n\n${giftOptions}\n\n이미지 분석 결과 대상은 '${desc}'(으)로 묘사됩니다.\n${
+        const unifiedPrompt = `다음은 어린이날, 어버이날 혹은 만약 분류가 어렵다면 '애매한이날' 선물 후보 목록입니다:\n\n${giftOptions}\n\n이미지 분석 결과 대상은 '${desc}'(으)로 묘사됩니다.\n${
           isPerson ? `나이는 약 ${age}세입니다.` : "사람은 아니에요."
         }\n\n가장 잘 어울리는 선물을 하나를 골라주세요. 특히, 이미지 분석 결과인 '${desc}'(으)로 묘사되고 ${
           isPerson ? `약 ${age}세로 추정되는` : "사람이 아닌"
@@ -340,8 +340,8 @@ export async function POST(request: NextRequest) {
     // 3. 고유 파일 경로 생성 (확장자 변경)
     const originalFilePath = `iffy-original/${Date.now()}-${generateUUID()}.webp`; // Changed extension to .webp
 
-    // 4. WebP Buffer를 사용하여 업로드
-    console.log("Supabase에 WebP original 이미지 업로드 시작...");
+    // 4. PNG Buffer를 사용하여 업로드
+    console.log("Supabase에 PNG original 이미지 업로드 시작...");
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("imageFile")
       .upload(originalFilePath, pngInputBuffer ?? imageBuffer, {
@@ -371,10 +371,20 @@ export async function POST(request: NextRequest) {
       "Error during initial processing (analysis/recommendation/sheets):",
       error
     );
-    isError = true;
-    reason = `초기 처리 중 오류: ${
-      (error as Error).message || "알 수 없는 오류"
-    }`;
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "reason" in error &&
+      error.reason === "maxRetriesExceeded"
+    ) {
+      reason = "최대 시도 횟수를 초과했어요. 나중에 다시 시도해주세요.";
+      isError = true;
+    } else {
+      isError = true;
+      reason = `초기 처리 중 오류: ${
+        (error as Error).message || "알 수 없는 오류"
+      }`;
+    }
     // 이미지 생성 단계 전에 오류가 발생했으므로, 바로 최종 저장 및 반환 로직으로 넘어감
     // (단, 이 경우 is_error=true, commentary=reason 으로 저장됨)
   }

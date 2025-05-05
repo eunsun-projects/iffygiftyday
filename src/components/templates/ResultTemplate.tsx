@@ -137,11 +137,11 @@ function Result() {
   }
 
   return (
-    <div className="h-auto">
+    <div className="h-auto p-1">
       <div className="flex flex-col gap-5">
-        <div className="space-y-2">
+        <div className="flex flex-row space-y-2 items-center justify-center gap-2 p-1">
           <SparkleStars />
-          <h2 className="text-2xl font-bold text-purple-800 tracking-tight flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-purple-800 tracking-tight flex items-center gap-2 whitespace-pre-wrap break-words break-keep">
             {iffyFinal?.humor}
           </h2>
         </div>
@@ -186,7 +186,7 @@ function Result() {
           )}
           <div className="bg-white/50 w-full rounded-md p-5 px-4 space-y-3">
             <div className="text-xl md:text-2xl font-bold text-purple-800 tracking-tight w-full flex items-center">
-              <div>
+              <div className="whitespace-pre-wrap break-words break-keep text-center">
                 <span>
                   {iffyFinal?.brand} {iffyFinal?.gift_name}
                 </span>
@@ -202,7 +202,7 @@ function Result() {
         <div className="flex flex-col items-center justify-center gap-3">
           {!iffyFinal?.is_error && (
             <Button
-              className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white h-12 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-lg  cursor-pointer w-full duration-1000"
+              className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white h-12 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2 text-lg  cursor-pointer w-full duration-1000 font-bold"
               onClick={() =>
                 handleShareToKakao({ iffyData: iffyFinal as Iffy })
               }

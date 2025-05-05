@@ -148,7 +148,11 @@ export default function UploadModal({ loading, setLoading }: UploadModalProps) {
       nextAppStatus = "failed";
       shouldStopPolling = true;
       errorOccurred = true;
-      errorMessage = "서버 처리 중 오류가 발생했습니다.";
+      const exceeded =
+        tempIffy.commentary.includes("최대 시도 횟수를 초과했어요.");
+      errorMessage = exceeded
+        ? "최대 시도 횟수를 초과했어요. 나중에 다시 시도해주세요."
+        : "서버 처리 중 오류가 발생했습니다.";
     } else if (statusError) {
       console.error("Polling error:", statusError);
       nextAppStatus = "failed";
