@@ -13,6 +13,7 @@ import { MAX_POLL_ATTEMPTS } from "@/constants/iffy.const";
 import { useIffyMutation, usePollIffyStatusQuery } from "@/hooks/query.hooks";
 import useIffyStore from "@/store/zustand";
 import type { LoadingState } from "@/types/iffy.types";
+import type { AxiosError } from "axios";
 import { Gift, Image, LoaderPinwheel, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -73,9 +74,9 @@ export default function UploadModal({ loading, setLoading }: UploadModalProps) {
       }, 15000);
     } catch (error) {
       console.error("업로드 실패:", error);
-      const exceeded = (error as Error).message.includes(
-        "AI 최대 사용량을 초과했어요."
-      );
+      const exceeded = (
+        error as AxiosError<{ error: string }>
+      ).response?.data.error.includes("AI 최대 사용량을 초과했어요.");
       setAppStatus("failed");
       setLoading({ ...loading, open: false });
       toast.error(

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { generateUUID } from "@/lib/utils";
 import type { Iffy } from "@/types/iffy.types";
 import { createOpenAI } from "@ai-sdk/openai";
-import { type GenerateObjectResult, generateObject } from "ai";
+import { type GenerateObjectResult, type RetryError, generateObject } from "ai";
 import { JWT } from "google-auth-library";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { type NextRequest, NextResponse } from "next/server";
@@ -38,19 +38,6 @@ interface GiftData {
   나이대: string; // Assuming the column name is '나이대'
   "제품 링크": string;
   [key: string]: unknown; // Use unknown instead of any for better type safety
-}
-
-interface GiftResponse {
-  age: number;
-  is_person: boolean;
-  desc: string;
-  is_error: boolean;
-  gift_name: string;
-  brand: string;
-  gift_image_url: string;
-  commentary: string;
-  link: string;
-  humor: string;
 }
 
 // --- Zod 스키마 정의 ---
@@ -106,6 +93,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // --- Google Sheets 데이터 로드 (캐싱 제거) ---
+    console.time("Google Sheet 로드 시간");
     console.log("Loading gift data from Google Sheet...");
     const doc = await setupGoogleSheet();
     if (!doc) {
@@ -120,6 +108,7 @@ export async function POST(request: NextRequest) {
     console.log(
       `Successfully loaded ${giftData.length} gift items from Google Sheet.`
     );
+    console.timeEnd("Google Sheet 로드 시간");
 
     const formData = await request.formData();
     const imageFile = formData.get("image") as File | null;
@@ -144,7 +133,7 @@ export async function POST(request: NextRequest) {
     }>;
     try {
       analysisResult = await generateObject({
-        model: aiSdkOpenai("gpt-4o"), // Using standard GPT-4o which includes vision
+        model: aiSdkOpenai("gpt-4o-mini"), // Using standard GPT-4o which includes vision
         schema: ImageAnalysisSchema,
         messages: [
           {
@@ -161,12 +150,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (error) {
       console.error("이미지 분석 오류:", error);
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "reason" in error &&
-        error.reason === "maxRetriesExceeded"
-      ) {
+      if ((error as RetryError).reason === "maxRetriesExceeded") {
         throw new Error(
           "AI 최대 사용량을 초과했어요. 나중에 다시 시도해주세요."
         );
