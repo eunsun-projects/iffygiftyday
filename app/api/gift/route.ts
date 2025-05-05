@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { generateUUID } from "@/lib/utils";
 import type { Iffy } from "@/types/iffy.types";
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateObject } from "ai";
+import { type GenerateObjectResult, generateObject } from "ai";
 import { JWT } from "google-auth-library";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { type NextRequest, NextResponse } from "next/server";
@@ -137,22 +137,45 @@ export async function POST(request: NextRequest) {
 
     // 2. 이미지 분석 (AI SDK 사용)
     console.log("이미지 분석 시작...");
-    const analysisResult = await generateObject({
-      model: aiSdkOpenai("gpt-4o"), // Using standard GPT-4o which includes vision
-      schema: ImageAnalysisSchema,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `이 사진을 보고 다음 정보를 JSON 형식으로 알려줘: is_person (true/false), desc (대상의 묘사), age (예상 나이 숫자). 예시: {"is_person": true, "desc": "귀여운 아이", "age": 6}`,
-            },
-            { type: "image", image: imageBuffer }, // Pass buffer directly
-          ],
-        },
-      ],
-    });
+    let analysisResult: GenerateObjectResult<{
+      is_person: boolean;
+      desc: string;
+      age: number;
+    }>;
+    try {
+      analysisResult = await generateObject({
+        model: aiSdkOpenai("gpt-4o"), // Using standard GPT-4o which includes vision
+        schema: ImageAnalysisSchema,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `이 사진을 보고 다음 정보를 JSON 형식으로 알려줘: is_person (true/false), desc (대상의 묘사), age (예상 나이 숫자). 예시: {"is_person": true, "desc": "귀여운 아이", "age": 6}`,
+              },
+              { type: "image", image: imageBuffer }, // Pass buffer directly
+            ],
+          },
+        ],
+      });
+    } catch (error) {
+      console.error("이미지 분석 오류:", error);
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "reason" in error &&
+        error.reason === "maxRetriesExceeded"
+      ) {
+        throw new Error(
+          "AI 최대 사용량을 초과했어요. 나중에 다시 시도해주세요."
+        );
+      }
+      return NextResponse.json(
+        { error: "이미지 분석 오류가 발생했어요. 다시 시도해볼까요?" },
+        { status: 500 }
+      );
+    }
     console.log("이미지 분석 결과:", analysisResult.object);
 
     isPerson = analysisResult.object.is_person;
@@ -371,22 +394,23 @@ export async function POST(request: NextRequest) {
       "Error during initial processing (analysis/recommendation/sheets):",
       error
     );
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "reason" in error &&
-      error.reason === "maxRetriesExceeded"
-    ) {
-      reason = "최대 시도 횟수를 초과했어요. 나중에 다시 시도해주세요.";
-      isError = true;
-    } else {
-      isError = true;
-      reason = `초기 처리 중 오류: ${
-        (error as Error).message || "알 수 없는 오류"
-      }`;
+
+    // 에러 메시지를 확인하여 '최대 시도 횟수 초과'인지 판단
+    const errorMessage =
+      error instanceof Error ? error.message : "알 수 없는 오류";
+
+    if (errorMessage.includes("AI 최대 사용량을 초과했어요")) {
+      // 특정 에러 메시지인 경우, DB 저장 없이 바로 500 에러 응답 반환
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: 500 } // 또는 429 Too Many Requests 상태 코드가 더 적절할 수 있습니다.
+      );
     }
-    // 이미지 생성 단계 전에 오류가 발생했으므로, 바로 최종 저장 및 반환 로직으로 넘어감
-    // (단, 이 경우 is_error=true, commentary=reason 으로 저장됨)
+
+    // 그 외 다른 초기 처리 오류의 경우, 기존 로직대로 isError 플래그 설정 후 진행
+    isError = true;
+    reason = `초기 처리 중 오류: ${errorMessage}`;
+    // (여기서 return 하지 않으면 아래 DB 저장 로직으로 진행됨)
   }
 
   const id = generateUUID();
