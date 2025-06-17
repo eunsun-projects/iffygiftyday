@@ -3,7 +3,7 @@ import type { AllGiftsResponse, GenResponse, Iffy } from "@/types/iffy.types";
 import api, { imgApi } from "./axios";
 
 export const postIffy = async ({ formData }: { formData: FormData }) => {
-  return api.post<Iffy, Iffy>("/api/gift", formData, {
+  return api.post<Iffy, Iffy>("/api/lggift", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -11,7 +11,7 @@ export const postIffy = async ({ formData }: { formData: FormData }) => {
 };
 
 export const getIffy = async ({ id }: { id: string }) => {
-  const response = await api.get<Iffy, Iffy>(`/api/gift?id=${id}`);
+  const response = await api.get<Iffy, Iffy>(`/api/lggift?id=${id}`);
   useIffyStore
     .getState()
     .setRefetchCount(useIffyStore.getState().refetchCount + 1);
