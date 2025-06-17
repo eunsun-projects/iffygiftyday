@@ -420,6 +420,7 @@ export async function POST(request: NextRequest) {
       commentary: reason,
       link: giftLink,
       humor,
+      product_img_url: imageUrl, // 추가
       user_id: user?.id ?? null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
