@@ -1,4 +1,5 @@
 import QueryProvider from "@/providers/QueryProvider";
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
@@ -43,6 +44,7 @@ export default function RootLayout({
           </section>
           <Toaster richColors />
         </QueryProvider>
+        <Analytics />
       </body>
       <Script
         src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.5/kakao.min.js"
